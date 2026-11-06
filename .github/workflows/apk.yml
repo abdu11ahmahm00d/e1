@@ -8,23 +8,17 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  android:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - run: |
-          sudo apt-get update && sudo apt-get install -y libgtk-4-1 libwebkitgtk-6.0-4 libgraphene-1.0-0 libjavascriptcoregtk-6.0-1 libwebkit2gtk-4.1-dev xvfb
-
       - run: curl -fsSL https://nsh.dev/install.sh | sh
         env:
           NSH_INSTALL_DIR: ${{ runner.temp }}/nsh
-
       - run: |
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
           mkdir -p $ANDROID_HOME/cmdline-tools
@@ -35,29 +29,38 @@ jobs:
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-
       - run: |
           export PATH="$HOME/.local/bin:$PATH"
           nsh --version
           nsh package ./e1 --target android --abi arm64-v8a -o .nsh/out-arm64
-          nsh package ./e1 --target linux -o .nsh/out-linux
-          ls -lh .nsh/out-arm64/e1.apk .nsh/out-linux/e1.tar.gz
-
+          ls -lh .nsh/out-arm64/e1.apk
       - uses: actions/upload-artifact@v4
         with:
           name: e1-android-arm64
           path: .nsh/out-arm64/e1.apk
           retention-days: 30
 
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: iwr https://nsh.dev/install.ps1 | iex
+        shell: pwsh
+      - run: nsh --version
+        shell: pwsh
+      - run: nsh package ./e1 --target windows -o .nsh/out-windows
+        shell: pwsh
+      - run: Get-ChildItem .nsh/out-windows -Recurse | Select-Object FullName, Length
+        shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
-          name: e1-linux
-          path: .nsh/out-linux/e1.tar.gz
+          name: e1-windows
+          path: .nsh/out-windows/**
           retention-days: 30
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: [android, windows]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -67,9 +70,9 @@ jobs:
           name: e1-android-arm64
       - uses: actions/download-artifact@v4
         with:
-          name: e1-linux
+          name: e1-windows
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             e1.apk
-            e1.tar.gz
+            e1.zip
