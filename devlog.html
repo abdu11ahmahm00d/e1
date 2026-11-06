@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevLog — {{project_name}}</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --orange: #d29922;
+  --red: #f85149;
+  --purple: #bc8cff;
+  --cyan: #39d2c0;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f8fa;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #656d76;
+    --accent: #0969da;
+    --green: #1a7f37;
+    --orange: #9a6700;
+    --red: #cf222e;
+    --purple: #8250df;
+    --cyan: #1b7c83;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+@media (min-width: 640px) {
+  body { padding: 32px; }
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.entry {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.entry summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.entry summary::-webkit-details-marker { display: none; }
+.entry summary::before {
+  content: "▶";
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  transition: transform 0.15s;
+  margin-right: 4px;
+}
+.entry[open] summary::before { transform: rotate(90deg); }
+.entry summary .date {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-family: var(--mono);
+}
+.entry summary .badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  text-transform: lowercase;
+}
+.badge-feature { background: #1f6feb33; color: var(--accent); }
+.badge-bugfix { background: #da363333; color: var(--red); }
+.badge-refactor { background: #8957e533; color: var(--purple); }
+.badge-infrastructure { background: #1b7c8333; color: var(--cyan); }
+.badge-security { background: #da363333; color: var(--red); }
+.badge-milestone { background: #23863633; color: var(--green); }
+.risk-low { color: var(--green); }
+.risk-med { color: var(--orange); }
+.risk-high { color: var(--red); }
+.breaking { color: var(--red); }
+
+.entry-body {
+  padding: 0 16px 16px;
+  font-size: 0.9375rem;
+}
+.entry-body h3 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 16px 0 6px;
+}
+.entry-body h3:first-child { margin-top: 0; }
+.entry-body p { margin-bottom: 8px; }
+.entry-body ul, .entry-body ol { padding-left: 20px; margin-bottom: 8px; }
+.entry-body li { margin-bottom: 4px; }
+.entry-body code {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.entry-body .alt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin: 8px 0;
+}
+.entry-body .alt-table th,
+.entry-body .alt-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.entry-body .alt-table th {
+  background: var(--bg);
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+.entry-body .alt-table .chosen { background: #2386361a; }
+.entry-body .alt-table .rejected { background: #da36331a; }
+
+.entry-body .meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.entry-body .meta-row span { display: flex; align-items: center; gap: 4px; }
+
+.entry-body blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.index-section {
+  margin-bottom: 24px;
+}
+.index-list {
+  list-style: none;
+  padding: 0;
+}
+.index-list li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+.index-list li:last-child { border-bottom: none; }
+.index-list .index-date {
+  font-family: var(--mono);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+.index-list .index-badge {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.index-list .index-title {
+  color: var(--accent);
+  text-decoration: none;
+  flex: 1;
+}
+.index-list .index-title:hover { text-decoration: underline; }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--text-muted);
+}
+.empty-state h2 { font-size: 1.25rem; margin-bottom: 8px; color: var(--text); }
+</style>
+</head>
+<body>
+
+<h1>DevLog: {{project_name}}</h1>
+<p class="subtitle">Every subphase, documented. Tech decisions with alternatives, code walkthroughs, and what we learned.</p>
+
+<section class="index-section" id="index">
+  <h2>Index</h2>
+  <ol class="index-list" id="index-list">
+    <!-- populated dynamically by rebuild_index() -->
+  </ol>
+</section>
+
+<div id="entries">
+  <!-- ENTRIES GO HERE — newest first -->
+  <details class="entry" id="entry-YYYYMMDD-001" data-category="milestone" data-date="YYYY-MM-DD">
+    <summary>
+      <span class="date">YYYY-MM-DD</span>
+      <span class="badge badge-milestone">milestone</span>
+      Project Kickoff
+    </summary>
+    <div class="entry-body">
+
+      <div class="meta-row">
+        <span>Risk: <strong class="risk-low">low</strong></span>
+        <span>Breaking: <strong>no</strong></span>
+      </div>
+
+      <h3>Tech Decision</h3>
+      <p><strong>Chosen:</strong> React with Vite</p>
+      <p><strong>Rejected:</strong> Svelte, Vue, Angular</p>
+      <table class="alt-table">
+        <tr><th>Alternative</th><th>Why Rejected</th></tr>
+        <tr class="chosen"><td>React + Vite</td><td>Rich ecosystem for date-pickers and form libraries; team already knows it; Vite for fast HMR</td></tr>
+        <tr class="rejected"><td>Svelte</td><td>Smaller bundle but stakeholder demanded component library ecosystem; would've shipped faster but ecosystem gap was a dealbreaker</td></tr>
+        <tr class="rejected"><td>Vue</td><td>No strong reason against it — team preference tilted React and consensus matters more than framework theology</td></tr>
+      </table>
+
+      <h3>What Was Implemented</h3>
+      <p>Set up the Vite + React + TypeScript scaffold with <code>pnpm create vite</code>. Added React Router v7 in framework mode for SSR — the pseudo-SSG approach we'd been using (pre-build script + client-rendered React) meant crawlers that don't execute JS saw an empty <code>&lt;div id="root"&gt;&lt;/div&gt;</code>. Framework mode with <code>prerender: true</code> produces real HTML at build time, fixing SEO without a separate SSR server.</p>
+      <p>The gotcha: Vite's <code>build.rollupOptions</code> needed manual config to tree-shake the server runtime from the client bundle. Without it, the client build included ~40KB of dead code from <code>@react-router/express</code>.</p>
+
+      <h3>Key Learnings</h3>
+      <ul>
+        <li>React Router v7 prerender mode doesn't handle dynamic routes with params — had to add a <code>prerender</code> config to list all paths explicitly</li>
+        <li><code>pnpm</code> peer dependency resolution is stricter than npm — had to add <code>--shamefully-hoist</code> for some legacy deps</li>
+      </ul>
+
+      <h3>Related</h3>
+      <ul>
+        <li><a href="#">ADR-001: React + Vite as frontend foundation</a></li>
+        <li><code>T-001: Project scaffold</code></li>
+      </ul>
+
+    </div>
+  </details>
+  <!-- /ENTRIES -->
+</div>
+
+<p class="subtitle" style="text-align:center;margin-top:32px;border:none;">
+  Generated {{generated_date}} · <a href="#index" style="color:var(--accent)">Back to index</a>
+</p>
+
+<script>
+(function() {
+  function rebuildIndex() {
+    var entries = document.querySelectorAll('#entries .entry');
+    var list = document.getElementById('index-list');
+    list.innerHTML = '';
+    if (!entries.length) {
+      list.innerHTML = '<li style="color:var(--text-muted);border:none;padding:16px 0;text-align:center">No entries yet — the first subphase will create one.</li>';
+      return;
+    }
+    entries.forEach(function(entry, i) {
+      if (!entry.id) entry.id = 'entry-' + i;
+      var summary = entry.querySelector('summary');
+      if (!summary) return;
+      var dateEl = summary.querySelector('.date');
+      var badgeEl = summary.querySelector('.badge');
+      var title = summary.childNodes[summary.childNodes.length - 1].textContent.trim();
+      var date = dateEl ? dateEl.textContent.trim() : '';
+      var category = badgeEl ? badgeEl.textContent.trim() : '';
+      var li = document.createElement('li');
+      var dateSpan = document.createElement('span');
+      dateSpan.className = 'index-date';
+      dateSpan.textContent = date;
+      li.appendChild(dateSpan);
+      if (category) {
+        var badge = document.createElement('span');
+        badge.className = 'index-badge ' + (badgeEl ? badgeEl.className.replace('badge ', 'index-') : '');
+        badge.textContent = category;
+        li.appendChild(badge);
+      }
+      var a = document.createElement('a');
+      a.className = 'index-title';
+      a.href = '#' + entry.id;
+      a.textContent = title;
+      li.appendChild(a);
+      list.appendChild(li);
+    });
+  }
+  rebuildIndex();
+})();
+</script>
+</body>
+</html>

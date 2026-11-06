@@ -1,0 +1,12 @@
+{
+  "name": "e1",
+  "id": "com.example.e1",
+  "version": "1.0.0",
+  "build": 1,
+  "capabilities": {
+    "clipboard": true,
+    "network": {
+      "hosts": ["*"]
+    }
+  }
+}
