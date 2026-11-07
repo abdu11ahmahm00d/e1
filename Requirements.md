@@ -1,44 +1,45 @@
 ---
-type: template
-title: Requirements Template
-description: Project requirements document — scope, constraints, acceptance criteria, frontmatter with tier, type, and allowed languages
-tags: [tpm, planning]
+type: requirements
+title: e1 Requirements
+description: Tier 1 flat-build NSH.dev (Native Shell by Longbridge v0.4.0) — one codebase, two artifacts
+tags: [e1, nsh, requirements]
+tier: 1
 ---
 
-# Requirements
-
-## Purpose
-User provides initial nebulous description. Agent runs a grilling session (Phase 1 orchestration) to surface all edge cases, constraints, and scope boundaries. After grilling, this file is structured into concrete requirements.
-
-## Process
-1. User writes free-form description
-2. If file doesn't exist or is under 1000 lines → **run Phase 1 grilling**
-3. Grill #1: Feature increment (what cool stuff can be added)
-4. Grill #2: Efficiency/optimization (language, codebase, vram/ram/cpu)
-5. During grilling, populate `upgrades.md` (do now) and `improvements.md` (do later)
-6. **Regression questioning**: continue grilling until 3 consecutive rounds produce no new insights. If the user keeps surfacing new edge cases, the grilling isn't exhaustive yet.
-7. After grilling, structure into formal requirements
-
-## Format
-
-```markdown
-# Project: {name}
+# e1 Requirements
 
 ## Overview
-{1-2 paragraph summary}
+e1 is a Tier 1 flat-build NSH.dev (Native Shell by Longbridge, v0.4.0 pre-1.0) experiment: one codebase, two shipping artifacts — desktop client (Windows target; Linux build kept as artifact) + Android APK — sending bidirectional text, clipboard on demand both ways, and 50 MB files both ways over Wi-Fi/BLE. Keep the tree flat. No enterprise ceremony.
 
 ## Core Features
-- {feature} — {description}
+- **Bidirectional text over LAN** — phone sender (`POST /send`) + PC receiver (`GET /latest`, 2s poll); reverse PC sender (`POST /send_pc`) + phone receiver (`GET /latest_pc`).
+- **Clipboard both ways** — button-triggered only (`Clipboard.writeText` / `readText`); no background listener (NSH has none).
+- **50 MB files both ways** — chunked JSON/base64 lane (256 KiB chunks × 200) proven loopback 93.7 MB/s; single-shot TSX NOT-VIABLE (`writeFile` 8 MiB max). No file UI in slice by design.
+- **CLI client** — `scripts/e1-cli.py` (stdlib) for terminal send/recv/copy over the same LAN contract.
+- **Two artifacts from one codebase** — Windows runner (`nsh package --target windows`) + Android APK (`--target android --abi arm64-v8a`, 36 MB). Web target for iteration.
 
 ## Technical Constraints
-- {constraint}
+- NSH v0.4.0 (`nsh 0.4.0 (e626a8d)`), TSX on QuickJS; `nsh.json` needs `capabilities:{clipboard:true, network:{hosts:["*"]}}` for LAN.
+- Pure-TSX has no HTTP listen socket — receiver is `e1/server.py` helper (port 8791). Native Rust `native_module` server is follow-up (see `research/feasibility-nsh-e1.md`).
+- NSH is pre-1.0 — Version Freshness Gate WARN (Tier 1 OK, Tier 4 BLOCK). Record current/target/blocker in `Improvements.md`.
+- No Android emulator on this box (needs 7.3 GB userdata, 6.4 GB free, no KVM). Use headless `nsh test` + handset via `scripts/handset-smoke.sh` (adb + scrcpy). See `research/small-footprint-android-testing.md`.
+- Windows packaging not built locally (no `~/.nsh/bin/nsh-windows-app`); CI `windows-latest` job builds it.
 
 ## User Stories
-- As a {role}, I want to {action} so that {benefit}
+- As a phone owner, I want to type text and send it to my PC over Wi-Fi LAN so I don't retype it.
+- As a PC user, I want to send text to my phone and copy it to clipboard, so the phone shows it without manual entry.
+- As a developer, I want one codebase to ship both artifacts, so I never maintain two text stacks.
 
 ## Acceptance Criteria
-- [ ] {criterion}
+- [x] Phone→PC text round-trip headless (`nsh test` 4/4) + live `server.py` smoke both directions.
+- [x] PC→phone text round-trip headless + live smoke both directions.
+- [x] Clipboard copy both directions headless (`Clipboard`).
+- [x] CLI `send`/`recv` both directions live against `server.py`.
+- [ ] Live handset clipboard round-trip + real Wi-Fi 50 MB MB/s on user router/phone (blocked on hardware, see `scripts/handset-smoke.sh`).
+- [ ] File UI + 50 MB lane in production (needs Rust mixed layer / native server; probe in `research/file-lane-probe.md`).
+- [x] Green CI: `android` (ubuntu-24.04) + `windows` (windows-latest) artifacts on push; releases on `v*` tags.
 
 ## Out of Scope
-- {explicitly excluded items}
-```
+- File UI in this slice (str\Desktop by design).
+- mDNS / BLE / hotspot discovery, ambient clipboard listener, auth/persistence.
+- Tier 4 enterprise ceremony; Linux desktop as primary target (kept only as build artifact/lint fallback).
