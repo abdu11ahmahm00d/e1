@@ -46,9 +46,10 @@ jobs:
       - uses: actions/checkout@v4
       - run: iwr https://nsh.dev/install.ps1 | iex
         shell: pwsh
-      - run: nsh --version
-        shell: pwsh
-      - run: nsh package ./e1 --target windows -o .nsh/out-windows
+      - run: |
+          $env:Path += ";$env:LOCALAPPDATA\nsh\bin"
+          & "$env:LOCALAPPDATA\nsh\bin\nsh.exe" --version
+          & "$env:LOCALAPPDATA\nsh\bin\nsh.exe" package ./e1 --target windows -o .nsh/out-windows
         shell: pwsh
       - run: Get-ChildItem .nsh/out-windows -Recurse | Select-Object FullName, Length
         shell: pwsh
