@@ -2,6 +2,8 @@ graphify-out/
 .nsh/out/
 .nsh/out-arm64/
 .nsh/out-linux/
+.nsh/out-windows/
+.nsh/out-web/
 /data/home/.nsh/
 target/
 *.apk
