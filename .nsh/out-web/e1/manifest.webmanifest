@@ -1,0 +1,11 @@
+{
+  "id": "com.example.e1",
+  "name": "e1",
+  "short_name": "e1",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": []
+}

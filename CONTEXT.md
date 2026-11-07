@@ -30,8 +30,12 @@ _Avoid_: Linux-only desktop, server.py as the app.
 _Avoid_: native server (future Rust work), production backend.
 
 **LAN contract**:
-Plain HTTP JSON on the local network: `POST /send {text}`, `GET /latest`, `POST /send_pc {text}`, `GET /latest_pc`, `GET /health`.
+Plain HTTP JSON on the local network: `POST /send {text}`, `GET /latest`, `POST /send_pc {text}`, `GET /latest_pc`, `GET /health`. Owned by `e1/lane.ts` (`lane(host)`).
 _Avoid_: mDNS, BLE, auth — not in slice.
+
+**lane module**:
+`e1/lane.ts` — the deep LAN module (`lane(host).send/sendPc/latest/latestPc` + `pollEvery`). Two adapters (phone sender, PC receiver) = real seam.
+_Avoid_: fetch literals per screen, wildcard test mocks.
 
 **CLI client**:
 `scripts/e1-cli.py` — terminal `send`/`recv`/`copy` over the same LAN contract. Third client, same protocol.

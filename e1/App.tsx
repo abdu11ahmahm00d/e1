@@ -1,10 +1,9 @@
 import { Clipboard, effect, mount, platform, signal, Text, View } from "nsh";
 import { Input } from "nsh/base";
+import { lane, pollEvery } from "./lane";
 
 // e1 vertical slice: one codebase, two screens, bidirectional text.
 // Transport: plain HTTP on LAN via PC helper (see server.py, port 8791).
-// Phone -> PC: POST /send, PC polls GET /latest.
-// PC -> Phone: POST /send_pc, phone polls GET /latest_pc.
 // No file UI in this slice by design.
 
 // --- Phone screen: type + Send over LAN ---------------------------------
@@ -27,12 +26,7 @@ function PhoneSender() {
     }
     status.set("Sending…");
     try {
-      const res = await fetch(`http://${host}/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await lane(host).send(text);
       status.set(`Sent to ${host}: "${text}"`);
     } catch (e) {
       status.set(`Send failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -48,29 +42,17 @@ function PhoneSender() {
     }
   }
 
-  // Reverse channel: poll PC helper for PC -> phone text.
   effect(() => {
-    let stopped = false;
-    async function poll() {
-      const host = pcHost().trim();
-      if (!host) return;
+    const host = pcHost().trim();
+    if (!host) return;
+    return pollEvery(async () => {
       try {
-        const res = await fetch(`http://${host}/latest_pc`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { text?: string; ts?: string };
-        if (stopped) return;
-        const text = data.text ?? "";
+        const { text } = await lane(host).latestPc();
         if (text) receivedPc.set(text);
       } catch {
         // Keep last received; status stays on send path.
       }
-    }
-    void poll();
-    const id = setInterval(() => void poll(), 2000);
-    return () => {
-      stopped = true;
-      clearInterval(id);
-    };
+    });
   });
 
   async function copyReceivedPc() {
@@ -129,15 +111,9 @@ function DesktopReceiver() {
   const draft = signal("");
 
   effect(() => {
-    if (!platform.desktop) return;
-    let stopped = false;
-    async function poll() {
+    return pollEvery(async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8791/latest");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as { text?: string; ts?: string };
-        if (stopped) return;
-        const text = data.text ?? "";
+        const { text } = await lane("127.0.0.1:8791").latest();
         if (text) {
           received.set(text);
           status.set(`Latest from phone: "${text}"`);
@@ -145,15 +121,9 @@ function DesktopReceiver() {
           status.set("Waiting for a message from the phone…");
         }
       } catch (e) {
-        if (!stopped) status.set(`Receiver unreachable: ${e instanceof Error ? e.message : String(e)}`);
+        status.set(`Receiver unreachable: ${e instanceof Error ? e.message : String(e)}`);
       }
-    }
-    void poll();
-    const id = setInterval(() => void poll(), 2000);
-    return () => {
-      stopped = true;
-      clearInterval(id);
-    };
+    });
   });
 
   async function copyReceived() {
@@ -173,12 +143,7 @@ function DesktopReceiver() {
     }
     status.set("Sending…");
     try {
-      const res = await fetch("http://127.0.0.1:8791/send_pc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await lane("127.0.0.1:8791").sendPc(text);
       status.set(`Sent to phone: "${text}"`);
     } catch (e) {
       status.set(`Send failed: ${e instanceof Error ? e.message : String(e)}`);

@@ -20,7 +20,7 @@ test("phone sends text over LAN and copies draft", async () => {
 
 test("pc receiver shows latest and copies it", async () => {
   const app = await open("./App.tsx", {
-    platform: "linux",
+    platform: "windows",
     network: {
       "GET *": { body: { text: "hello from phone", ts: "2026-11-06T00:00:00Z" } },
       "POST *": { body: { ok: true } },
@@ -34,7 +34,7 @@ test("pc receiver shows latest and copies it", async () => {
 
 test("pc sends text to phone", async () => {
   const app = await open("./App.tsx", {
-    platform: "linux",
+    platform: "windows",
     network: {
       "GET *": { body: { text: "", ts: "" } },
       "POST *": { body: { ok: true } },
